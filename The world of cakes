@@ -1,0 +1,121 @@
+import pygame
+import random
+
+pygame.init()
+pygame.mixer.init()
+
+# Screen settings
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("The World of Cake")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+PINK = (255, 182, 193)
+GREEN = (144, 238, 144)
+YELLOW = (255, 255, 102)
+CHOCOLATE = (139, 69, 19)
+STRAWBERRY = (220, 20, 60)
+CARAMEL = (210, 105, 30)
+BLUE = (135, 206, 250)
+
+# Fonts
+font = pygame.font.Font(None, 36)
+
+# Sounds
+click_sound = pygame.mixer.Sound("click.wav")
+success_sound = pygame.mixer.Sound("success.wav")
+pygame.mixer.music.load("background_music.mp3")
+pygame.mixer.music.play(-1)
+
+# Images (replace with actual images)
+sponge_images = {
+    "Circle": pygame.image.load("circle_sponge.png"),
+    "Square": pygame.image.load("square_sponge.png"),
+    "Triangle": pygame.image.load("triangle_sponge.png")
+}
+
+# Game states
+states = ["SPONGE SHAPE", "FLAVOR", "MIXTURE", "SAUCE", "DECORATION", "RESULT", "GAME OVER"]
+current_state = 0
+
+# Options for each stage
+sponge_shapes = ["Circle", "Square", "Triangle"]
+flavors = ["Chocolate", "Strawberry", "Caramel"]
+mixtures = ["Pink", "Green", "White"]
+sauces = ["Pink", "Green", "Yellow"]
+decorations = ["Smiles", "Sprinkles", "Hearts", "Leaves"]
+
+# Selections made by the player
+selections = {
+    "Sponge Shape": None,
+    "Flavor": None,
+    "Mixture": None,
+    "Sauce": None,
+    "Decoration": None,
+}
+
+# Game loop variables
+running = True
+slider_index = 0
+clock = pygame.time.Clock()
+
+# Animation variables
+cake_parts = []  # Tracks the parts of the cake
+animation_x = 50
+animation_speed = 5
+rotation_angle = 0  # For cake rotation
+
+def draw_text(text, x, y, color=BLACK):
+    label = font.render(text, True, color)
+    screen.blit(label, (x, y))
+
+def draw_options(options, selected_index, y_offset=100):
+    for i, option in enumerate(options):
+        color = BLUE if i == selected_index else BLACK
+        draw_text(option, 50, y_offset + i * 50, color)
+
+def play_sound(sound):
+    pygame.mixer.Sound.play(sound)
+
+def animate_cake():
+    global animation_x, rotation_angle
+    if animation_x < SCREEN_WIDTH // 2:
+        animation_x += animation_speed
+    if rotation_angle < 360:
+        rotation_angle += 2
+    cake_rotated = pygame.transform.rotate(sponge_images[selections['Sponge Shape']], rotation_angle)
+    screen.blit(cake_rotated, (animation_x, 400))
+
+def restart_game():
+    global current_state, selections, cake_parts
+    current_state = 0
+    selections = {"Sponge Shape": None, "Flavor": None, "Mixture": None, "Sauce": None, "Decoration": None}
+    cake_parts = []
+
+# Button class for restarting
+class Button:
+    def __init__(self, text, x, y, width, height, action):
+        self.text = text
+        self.rect = pygame.Rect(x, y, width, height)
+        self.action = action
+
+    def draw(self):
+        pygame.draw.rect(screen, (0, 200, 0), self.rect)
+        draw_text(self.text, self.rect.centerx - font.size(self.text)[0] // 2, self.rect.centery - font.size(self.text)[1] // 2)
+
+    def is_hovered(self):
+        return self.rect.collidepoint(pygame.mouse.get_pos())
+
+    def click(self):
+        if self.is_hovered():
+            self.action()
+
+# Create a restart button
+restart_button = Button("Restart", 350, 500, 100, 50, restart_game)
+
+# Game loop
+while running:
+    screen.fill(WHITE)
+    draw_text(f"State: {states[current_state]}", 10,
